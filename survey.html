@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>技术栈调查问卷</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.staticfile.org/element-plus/2.3.0/index.css"
+    />
+    <script src="https://cdn.staticfile.org/vue/3.2.45/vue.global.min.js"></script>
+    <script src="https://cdn.staticfile.org/element-plus/2.3.0/index.full.min.js"></script>
+    <script src="https://cdn.staticfile.org/echarts/5.4.0/echarts.min.js"></script>
+
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Source+Han+Sans+CN:wght@400;500;700&display=swap");
+
+      body {
+        font-family: "Source Han Sans CN", sans-serif;
+        background: rgb(240, 240, 240);
+        margin: 0;
+        padding: 20px;
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      #app {
+        background: white;
+        width: 100%;
+        max-width: 794px; /* A4宽度 */
+        min-height: 1123px; /* A4高度 */
+        margin: 20px auto;
+        padding: 40px 30px;
+        box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+      }
+
+      .el-form {
+        max-width: 680px;
+        margin: 0 auto;
+      }
+
+      h1 {
+        color: #2196f3 !important;
+        margin-bottom: 50px !important;
+        text-align: center;
+      }
+
+      .recommendation-card {
+        margin-bottom: 20px;
+        border-radius: 8px;
+        transition: transform 0.3s ease;
+      }
+
+      .recommendation-card:hover {
+        transform: translateY(-5px);
+      }
+
+      .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+
+      .card-header h4 {
+        margin: 0;
+        font-size: 18px;
+        color: #333;
+      }
+
+      .card-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 10px;
+      }
+
+      .card-footer span {
+        color: #666;
+        font-size: 14px;
+      }
+
+      .card-footer .el-progress {
+        flex: 1;
+        margin: 0 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <el-form
+        :model="form"
+        :rules="rules"
+        ref="formRef"
+        @submit.prevent="submitForm"
+      >
+        <h1>技术栈调查问卷</h1>
+
+        <el-form-item label="您的姓名：" prop="name">
+          <el-input v-model="form.name" style="width: 300px"></el-input>
+        </el-form-item>
+
+        <el-form-item label="工作年限：" prop="workExperience">
+          <el-radio-group v-model="form.workExperience">
+            <el-radio :label="1">1-3年</el-radio>
+            <el-radio :label="3">3-5年</el-radio>
+            <el-radio :label="5">5年以上</el-radio>
+          </el-radio-group>
+        </el-form-item>
+
+        <el-form-item label="当前熟悉的技术栈：">
+          <el-checkbox-group v-model="form.techStacks">
+            <el-tooltip content="包含Spring等框架经验" placement="top">
+              <el-checkbox label="java">Java</el-checkbox>
+            </el-tooltip>
+            <el-checkbox label="go">Go</el-checkbox>
+            <el-checkbox label="cpp">C/C++</el-checkbox>
+            <el-tooltip content="包含Vue/React等框架经验" placement="top">
+              <el-checkbox label="web">HTML/CSS/JS</el-checkbox>
+            </el-tooltip>
+            <el-checkbox label="vue">Vue</el-checkbox>
+            <el-checkbox label="react">React</el-checkbox>
+            <el-checkbox label="tailwind">Tailwind CSS</el-checkbox>
+          </el-checkbox-group>
+        </el-form-item>
+
+        <el-form-item label="对前端开发的兴趣：">
+          <el-radio-group v-model="form.interestLevel">
+            <el-radio :label="4">很感兴趣，希望承担前端工作</el-radio>
+            <el-radio :label="3">愿意学习基础知识</el-radio>
+            <el-radio :label="2">有点兴趣但不确定</el-radio>
+            <el-radio :label="1">完全不感兴趣</el-radio>
+          </el-radio-group>
+        </el-form-item>
+
+        <el-form-item label="希望承担的角色：">
+          <el-checkbox-group v-model="form.desiredRoles">
+            <el-checkbox label="fullstack">全栈开发</el-checkbox>
+            <el-checkbox label="partial">参与部分前端开发</el-checkbox>
+            <el-checkbox label="maintenance">维护现有代码</el-checkbox>
+          </el-checkbox-group>
+        </el-form-item>
+
+        <el-form-item label="希望培训的重点：">
+          <el-checkbox-group v-model="form.trainingFocuses">
+            <el-checkbox label="basic">HTML/CSS/JS 基础</el-checkbox>
+            <el-checkbox label="react">React/Next.js</el-checkbox>
+            <el-checkbox label="vue">Vue/Element Plus</el-checkbox>
+            <el-checkbox label="backend">后端对接</el-checkbox>
+          </el-checkbox-group>
+        </el-form-item>
+
+        <el-form-item label="其他意见或建议：">
+          <el-input
+            type="textarea"
+            v-model="form.comments"
+            :rows="4"
+            style="width: 500px"
+          ></el-input>
+        </el-form-item>
+
+        <el-form-item>
+          <el-button type="primary" native-type="submit">提交问卷</el-button>
+          <el-button @click="resetForm">重置</el-button>
+        </el-form-item>
+      </el-form>
+
+      <el-dialog
+        title="学习路径推荐"
+        v-model="showRecommendation"
+        width="800px"
+      >
+        <el-timeline>
+          <el-timeline-item
+            v-for="(item, index) in recommendations"
+            :key="index"
+            :timestamp="item.timestamp"
+            placement="top"
+          >
+            <el-card shadow="hover" class="recommendation-card">
+              <div class="card-header">
+                <h4>{{ item.title }}</h4>
+                <el-tag
+                  :type="item.level === '高级' ? 'danger' : item.level === '中级' ? 'warning' : 'success'"
+                  size="small"
+                >
+                  {{ item.level }}
+                </el-tag>
+              </div>
+              <p>{{ item.description }}</p>
+              <div class="card-footer">
+                <span
+                  ><i class="el-icon-time"></i> 时长：{{ item.duration }}</span
+                >
+                <el-progress
+                  :percentage="item.progress"
+                  :status="item.progress === 100 ? 'success' : ''"
+                ></el-progress>
+                <el-button type="text" @click="viewCourseDetail(item)">
+                  查看详情 <i class="el-icon-arrow-right"></i>
+                </el-button>
+              </div>
+            </el-card>
+          </el-timeline-item>
+        </el-timeline>
+      </el-dialog>
+    </div>
+
+    <script>
+      const { createApp } = Vue;
+      const { ElLoading } = ElementPlus;
+
+      createApp({
+        data() {
+          return {
+            form: {
+              name: "",
+              workExperience: null,
+              techStacks: [],
+              interestLevel: null,
+              desiredRoles: [],
+              trainingFocuses: [],
+              comments: "",
+            },
+            rules: {
+              name: [
+                { required: true, message: "请输入姓名", trigger: "blur" },
+              ],
+              workExperience: [
+                {
+                  required: true,
+                  message: "请选择工作年限",
+                  trigger: "change",
+                },
+              ],
+            },
+            showRecommendation: false,
+            recommendations: [],
+            showPreview: false,
+            previewTags: [],
+            previewCourses: [],
+            learningProgress: [],
+            radarChart: null,
+          };
+        },
+        mounted() {
+          const savedData = localStorage.getItem("surveyData");
+          if (savedData) {
+            this.form = JSON.parse(savedData);
+          }
+
+          this.trackLearningProgress();
+          // 动态加载echarts
+          const script = document.createElement("script");
+          script.src =
+            "https://cdn.staticfile.org/echarts/5.4.0/echarts.min.js";
+          script.onload = () => this.initRadarChart();
+          document.head.appendChild(script);
+        },
+        // 新增计算属性
+        computed: {
+          totalProgress() {
+            return (
+              this.learningProgress.reduce(
+                (sum, cur) => sum + cur.progress,
+                0
+              ) / this.learningProgress.length || 0
+            );
+          },
+          progressStatus() {
+            return this.totalProgress >= 80
+              ? "success"
+              : this.totalProgress >= 50
+              ? "warning"
+              : "exception";
+          },
+          achievementCount() {
+            return this.learningProgress.filter((item) => item.progress === 100)
+              .length;
+          },
+        },
+        // 新增watch监听
+        watch: {
+          "form.techStacks": {
+            handler(newVal) {
+              this.showPreview = newVal.length > 0;
+              this.updatePreview(newVal);
+            },
+            immediate: true,
+          },
+        },
+
+        methods: {
+          submitForm() {
+            this.$refs.formRef.validate((valid) => {
+              if (valid) {
+                const surveys = JSON.parse(
+                  localStorage.getItem("surveys") || "[]"
+                );
+                surveys.push(this.form);
+                localStorage.setItem("surveys", JSON.stringify(surveys));
+
+                this.recommendations = this.generateRecommendation();
+                this.showRecommendation = true;
+              } else {
+                this.$message.error("请填写完所有必填项后再提交");
+              }
+            });
+          },
+          resetForm() {
+            this.$refs.formRef.resetFields();
+            localStorage.removeItem("surveyData");
+          },
+          generateRecommendation() {
+            const rec = [];
+            const { techStacks, interestLevel } = this.form;
+
+            const currentDate = new Date();
+            const formatDate = (date) => {
+              const year = date.getFullYear();
+              const month = String(date.getMonth() + 1).padStart(2, "0");
+              const day = String(date.getDate()).padStart(2, "0");
+              return `${year}-${month}-${day}`;
+            };
+
+            if (techStacks.includes("vue")) {
+              rec.push({
+                title: "Vue3 高级实战课程",
+                description:
+                  "深入 Vue3 核心原理，掌握组合式API和状态管理，涵盖Element Plus企业级项目实战",
+                level: "高级",
+                duration: "18 小时",
+                timestamp: formatDate(currentDate),
+                progress: this.getCourseProgress("Vue3 高级实战课程"),
+              });
+            }
+
+            if (techStacks.includes("react")) {
+              rec.push({
+                title: "React全栈开发训练营",
+                description:
+                  "从React基础到Next.js实战，结合TypeScript与Redux状态管理，打造现代化应用",
+                level: "中级",
+                duration: "25 小时",
+                timestamp: formatDate(
+                  new Date(currentDate.setDate(currentDate.getDate() + 1))
+                ),
+                progress: this.getCourseProgress("React全栈开发训练营"),
+              });
+            }
+
+            if (techStacks.includes("go")) {
+              rec.push({
+                title: "Go语言高性能编程",
+                description:
+                  "掌握Goroutine并发模型、Channel通信机制，实现高并发微服务开发",
+                level: "高级",
+                duration: "15 小时",
+                timestamp: formatDate(
+                  new Date(currentDate.setDate(currentDate.getDate() + 2))
+                ),
+                progress: this.getCourseProgress("Go语言高性能编程"),
+              });
+            }
+
+            if (techStacks.includes("java")) {
+              rec.push({
+                title: "Spring Cloud微服务架构",
+                description:
+                  "基于Spring Boot 3.x 构建分布式系统，集成Nacos、Sentinel等阿里生态组件",
+                level: "高级",
+                duration: "30 小时",
+                timestamp: formatDate(
+                  new Date(currentDate.setDate(currentDate.getDate() + 3))
+                ),
+                progress: this.getCourseProgress("Spring Cloud微服务架构"),
+              });
+            }
+
+            if (interestLevel === 4) {
+              rec.push({
+                title: "前端架构师成长路径",
+                description:
+                  "从工程化到性能优化，掌握Webpack深度配置、自动化部署与CI/CD实践",
+                level: "专家",
+                duration: "40 小时",
+                timestamp: formatDate(
+                  new Date(currentDate.setDate(currentDate.getDate() + 4))
+                ),
+                progress: this.getCourseProgress("前端架构师成长路径"),
+              });
+            } else if (interestLevel === 3) {
+              rec.push({
+                title: "现代前端开发入门",
+                description:
+                  "零基础掌握ES6+、Webpack配置、UI组件库集成与RESTful API对接",
+                level: "初级",
+                duration: "12 小时",
+                timestamp: formatDate(
+                  new Date(currentDate.setDate(currentDate.getDate() + 5))
+                ),
+                progress: this.getCourseProgress("现代前端开发入门"),
+              });
+            }
+
+            if (rec.length === 0) {
+              rec.push({
+                title: "全栈开发基础入门",
+                description:
+                  "HTML/CSS核心技巧 + Node.js后端开发 + MySQL数据库实战",
+                level: "初级",
+                duration: "15 小时",
+                timestamp: formatDate(
+                  new Date(currentDate.setDate(currentDate.getDate() + 6))
+                ),
+                progress: this.getCourseProgress("全栈开发基础入门"),
+              });
+            }
+
+            return rec;
+          },
+          trackLearningProgress() {
+            const progress = JSON.parse(
+              localStorage.getItem("learningProgress") || "{}"
+            );
+            this.learningProgress = Object.entries(progress).map(
+              ([title, p]) => ({
+                title,
+                progress: p,
+              })
+            );
+          },
+          getCourseProgress(courseTitle) {
+            const progressMap = JSON.parse(
+              localStorage.getItem("learningProgress") || "{}"
+            );
+            return progressMap[courseTitle] || 0;
+          },
+          updateCourseProgress(courseTitle, progress) {
+            const progressMap = JSON.parse(
+              localStorage.getItem("learningProgress") || "{}"
+            );
+            progressMap[courseTitle] = progress;
+            localStorage.setItem(
+              "learningProgress",
+              JSON.stringify(progressMap)
+            );
+          },
+          viewCourseDetail(item) {
+            const encodedTitle = encodeURIComponent(item.title);
+            const bilibiliUrl = `https://search.bilibili.com/all?keyword=${encodedTitle}`;
+            this.$message.success(`正在打开 Bilibili 搜索 "${item.title}"`);
+            setTimeout(() => {
+              window.open(bilibiliUrl, "_blank");
+            }, 1000);
+          },
+          // 实时预览更新
+          updatePreview(techStacks) {
+            const tagMap = {
+              java: "后端开发",
+              go: "高并发",
+              cpp: "系统编程",
+              web: "前端基础",
+              vue: "Vue生态",
+              react: "React生态",
+              tailwind: "CSS框架",
+            };
+            this.previewTags = [...new Set(techStacks.map((t) => tagMap[t]))];
+
+            const courseMap = {
+              java: { title: "Spring Boot实战", level: "中级" },
+              vue: { title: "Vue3核心原理", level: "高级" },
+              react: { title: "React全栈开发", level: "中级" },
+              go: { title: "Go并发编程", level: "高级" },
+            };
+            this.previewCourses = techStacks
+              .map((t) => courseMap[t])
+              .filter(Boolean)
+              .slice(0, 3);
+          },
+
+          // 初始化雷达图
+          initRadarChart() {
+            const skills = ["前端", "后端", "架构", "数据库", "DevOps"];
+            this.radarChart = echarts.init(this.$refs.radarChart);
+
+            const option = {
+              radar: {
+                indicator: skills.map((s) => ({ name: s, max: 100 })),
+                shape: "polygon",
+              },
+              series: [
+                {
+                  type: "radar",
+                  data: [
+                    {
+                      value: this.calculateSkillPoints(),
+                      areaStyle: { color: "rgba(33, 150, 243, 0.4)" },
+                    },
+                  ],
+                },
+              ],
+            };
+            this.radarChart.setOption(option);
+          },
+
+          // 计算技能点（示例逻辑）
+          calculateSkillPoints() {
+            const stackPoints = {
+              web: [30, 10, 0, 0, 0],
+              java: [10, 40, 20, 30, 10],
+              vue: [50, 20, 10, 0, 0],
+              react: [60, 30, 15, 0, 5],
+              go: [10, 60, 40, 20, 30],
+            };
+            return this.form.techStacks
+              .map((s) => stackPoints[s] || [0, 0, 0, 0, 0])
+              .reduce(
+                (sum, arr) => sum.map((v, i) => v + arr[i]),
+                [0, 0, 0, 0, 0]
+              )
+              .map((v) => Math.min(v, 100));
+          },
+        },
+      })
+        .use(ElementPlus)
+        .mount("#app");
+    </script>
+  </body>
+</html>

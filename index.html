@@ -14,9 +14,14 @@
     <style>
       @import url("https://fonts.googleapis.com/css2?family=Source+Han+Sans+CN:wght@400;500;700&display=swap");
 
+      /* BODY 通用样式 */
       body {
+        /* 通用字体 */
         font-family: "Source Han Sans CN", sans-serif;
+        /* 背景色 */
         background: rgb(240, 240, 240);
+
+        /* 居中 */
         margin: 0;
         padding: 20px;
         min-height: 100vh;
@@ -41,6 +46,7 @@
         margin: 0 auto;
       }
 
+      /* 标题样式 */
       h1 {
         color: #2196f3 !important;
         margin-bottom: 50px !important;
@@ -211,7 +217,7 @@
     <script>
       const { createApp } = Vue;
       const { ElLoading } = ElementPlus;
-
+        
       createApp({
         data() {
           return {

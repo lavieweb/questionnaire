@@ -215,113 +215,57 @@
     </div>
 
     <script>
-      const { createApp } = Vue;
+      const { createApp, ref, reactive, computed, watch, onMounted } = Vue;
       const { ElLoading } = ElementPlus;
-        
+
       createApp({
-        data() {
-          return {
-            form: {
-              name: "",
-              workExperience: null,
-              techStacks: [],
-              interestLevel: null,
-              desiredRoles: [],
-              trainingFocuses: [],
-              comments: "",
-            },
-            rules: {
-              name: [
-                { required: true, message: "请输入姓名", trigger: "blur" },
-              ],
-              workExperience: [
-                {
-                  required: true,
-                  message: "请选择工作年限",
-                  trigger: "change",
-                },
-              ],
-            },
-            showRecommendation: false,
-            recommendations: [],
-            showPreview: false,
-            previewTags: [],
-            previewCourses: [],
-            learningProgress: [],
-            radarChart: null,
-          };
-        },
-        mounted() {
-          const savedData = localStorage.getItem("surveyData");
-          if (savedData) {
-            this.form = JSON.parse(savedData);
-          }
+        setup() {
+          const formRef = ref(null);
+          const form = reactive({
+            name: "",
+            workExperience: null,
+            techStacks: [],
+            interestLevel: null,
+            desiredRoles: [],
+            trainingFocuses: [],
+            comments: "",
+          });
 
-          this.trackLearningProgress();
-          // 动态加载echarts
-          const script = document.createElement("script");
-          script.src =
-            "https://cdn.staticfile.org/echarts/5.4.0/echarts.min.js";
-          script.onload = () => this.initRadarChart();
-          document.head.appendChild(script);
-        },
-        // 新增计算属性
-        computed: {
-          totalProgress() {
-            return (
-              this.learningProgress.reduce(
-                (sum, cur) => sum + cur.progress,
-                0
-              ) / this.learningProgress.length || 0
-            );
-          },
-          progressStatus() {
-            return this.totalProgress >= 80
-              ? "success"
-              : this.totalProgress >= 50
-              ? "warning"
-              : "exception";
-          },
-          achievementCount() {
-            return this.learningProgress.filter((item) => item.progress === 100)
-              .length;
-          },
-        },
-        // 新增watch监听
-        watch: {
-          "form.techStacks": {
-            handler(newVal) {
-              this.showPreview = newVal.length > 0;
-              this.updatePreview(newVal);
-            },
-            immediate: true,
-          },
-        },
+          const rules = reactive({
+            name: [{ required: true, message: "请输入姓名", trigger: "blur" }],
+            workExperience: [
+              { required: true, message: "请选择工作年限", trigger: "change" },
+            ],
+          });
 
-        methods: {
-          submitForm() {
-            this.$refs.formRef.validate((valid) => {
+          const showRecommendation = ref(false);
+          const recommendations = ref([]);
+
+          const submitForm = () => {
+            formRef.value.validate((valid) => {
               if (valid) {
                 const surveys = JSON.parse(
                   localStorage.getItem("surveys") || "[]"
                 );
-                surveys.push(this.form);
+                surveys.push(form);
                 localStorage.setItem("surveys", JSON.stringify(surveys));
 
-                this.recommendations = this.generateRecommendation();
-                this.showRecommendation = true;
+                recommendations.value = generateRecommendation();
+                showRecommendation.value = true;
               } else {
-                this.$message.error("请填写完所有必填项后再提交");
+                ElMessage.error("请填写完所有必填项后再提交");
               }
             });
-          },
-          resetForm() {
-            this.$refs.formRef.resetFields();
+          };
+
+          const resetForm = () => {
+            formRef.value.resetFields();
             localStorage.removeItem("surveyData");
-          },
-          generateRecommendation() {
+          };
+
+          const generateRecommendation = () => {
             const rec = [];
-            const { techStacks, interestLevel } = this.form;
+            const { techStacks, interestLevel } = form;
 
             const currentDate = new Date();
             const formatDate = (date) => {
@@ -339,7 +283,7 @@
                 level: "高级",
                 duration: "18 小时",
                 timestamp: formatDate(currentDate),
-                progress: this.getCourseProgress("Vue3 高级实战课程"),
+                progress: getCourseProgress("Vue3 高级实战课程"),
               });
             }
 
@@ -353,7 +297,7 @@
                 timestamp: formatDate(
                   new Date(currentDate.setDate(currentDate.getDate() + 1))
                 ),
-                progress: this.getCourseProgress("React全栈开发训练营"),
+                progress: getCourseProgress("React全栈开发训练营"),
               });
             }
 
@@ -367,7 +311,7 @@
                 timestamp: formatDate(
                   new Date(currentDate.setDate(currentDate.getDate() + 2))
                 ),
-                progress: this.getCourseProgress("Go语言高性能编程"),
+                progress: getCourseProgress("Go语言高性能编程"),
               });
             }
 
@@ -381,7 +325,7 @@
                 timestamp: formatDate(
                   new Date(currentDate.setDate(currentDate.getDate() + 3))
                 ),
-                progress: this.getCourseProgress("Spring Cloud微服务架构"),
+                progress: getCourseProgress("Spring Cloud微服务架构"),
               });
             }
 
@@ -395,7 +339,7 @@
                 timestamp: formatDate(
                   new Date(currentDate.setDate(currentDate.getDate() + 4))
                 ),
-                progress: this.getCourseProgress("前端架构师成长路径"),
+                progress: getCourseProgress("前端架构师成长路径"),
               });
             } else if (interestLevel === 3) {
               rec.push({
@@ -407,7 +351,7 @@
                 timestamp: formatDate(
                   new Date(currentDate.setDate(currentDate.getDate() + 5))
                 ),
-                progress: this.getCourseProgress("现代前端开发入门"),
+                progress: getCourseProgress("现代前端开发入门"),
               });
             }
 
@@ -421,114 +365,46 @@
                 timestamp: formatDate(
                   new Date(currentDate.setDate(currentDate.getDate() + 6))
                 ),
-                progress: this.getCourseProgress("全栈开发基础入门"),
+                progress: getCourseProgress("全栈开发基础入门"),
               });
             }
 
             return rec;
-          },
-          trackLearningProgress() {
-            const progress = JSON.parse(
-              localStorage.getItem("learningProgress") || "{}"
-            );
-            this.learningProgress = Object.entries(progress).map(
-              ([title, p]) => ({
-                title,
-                progress: p,
-              })
-            );
-          },
-          getCourseProgress(courseTitle) {
+          };
+
+          const getCourseProgress = (courseTitle) => {
             const progressMap = JSON.parse(
               localStorage.getItem("learningProgress") || "{}"
             );
             return progressMap[courseTitle] || 0;
-          },
-          updateCourseProgress(courseTitle, progress) {
-            const progressMap = JSON.parse(
-              localStorage.getItem("learningProgress") || "{}"
-            );
-            progressMap[courseTitle] = progress;
-            localStorage.setItem(
-              "learningProgress",
-              JSON.stringify(progressMap)
-            );
-          },
-          viewCourseDetail(item) {
+          };
+
+          const viewCourseDetail = (item) => {
             const encodedTitle = encodeURIComponent(item.title);
             const bilibiliUrl = `https://search.bilibili.com/all?keyword=${encodedTitle}`;
-            this.$message.success(`正在打开 Bilibili 搜索 "${item.title}"`);
+            ElMessage.success(`正在打开 Bilibili 搜索 "${item.title}"`);
             setTimeout(() => {
               window.open(bilibiliUrl, "_blank");
             }, 1000);
-          },
-          // 实时预览更新
-          updatePreview(techStacks) {
-            const tagMap = {
-              java: "后端开发",
-              go: "高并发",
-              cpp: "系统编程",
-              web: "前端基础",
-              vue: "Vue生态",
-              react: "React生态",
-              tailwind: "CSS框架",
-            };
-            this.previewTags = [...new Set(techStacks.map((t) => tagMap[t]))];
+          };
 
-            const courseMap = {
-              java: { title: "Spring Boot实战", level: "中级" },
-              vue: { title: "Vue3核心原理", level: "高级" },
-              react: { title: "React全栈开发", level: "中级" },
-              go: { title: "Go并发编程", level: "高级" },
-            };
-            this.previewCourses = techStacks
-              .map((t) => courseMap[t])
-              .filter(Boolean)
-              .slice(0, 3);
-          },
+          onMounted(() => {
+            const savedData = localStorage.getItem("surveyData");
+            if (savedData) {
+              Object.assign(form, JSON.parse(savedData));
+            }
+          });
 
-          // 初始化雷达图
-          initRadarChart() {
-            const skills = ["前端", "后端", "架构", "数据库", "DevOps"];
-            this.radarChart = echarts.init(this.$refs.radarChart);
-
-            const option = {
-              radar: {
-                indicator: skills.map((s) => ({ name: s, max: 100 })),
-                shape: "polygon",
-              },
-              series: [
-                {
-                  type: "radar",
-                  data: [
-                    {
-                      value: this.calculateSkillPoints(),
-                      areaStyle: { color: "rgba(33, 150, 243, 0.4)" },
-                    },
-                  ],
-                },
-              ],
-            };
-            this.radarChart.setOption(option);
-          },
-
-          // 计算技能点（示例逻辑）
-          calculateSkillPoints() {
-            const stackPoints = {
-              web: [30, 10, 0, 0, 0],
-              java: [10, 40, 20, 30, 10],
-              vue: [50, 20, 10, 0, 0],
-              react: [60, 30, 15, 0, 5],
-              go: [10, 60, 40, 20, 30],
-            };
-            return this.form.techStacks
-              .map((s) => stackPoints[s] || [0, 0, 0, 0, 0])
-              .reduce(
-                (sum, arr) => sum.map((v, i) => v + arr[i]),
-                [0, 0, 0, 0, 0]
-              )
-              .map((v) => Math.min(v, 100));
-          },
+          return {
+            formRef,
+            form,
+            rules,
+            submitForm,
+            resetForm,
+            showRecommendation,
+            recommendations,
+            viewCourseDetail,
+          };
         },
       })
         .use(ElementPlus)
